@@ -1,3 +1,7 @@
+import javafx.animation.Animation
+import javafx.animation.KeyFrame
+import javafx.animation.Timeline
+import javafx.event.EventHandler
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.image.Image
@@ -5,6 +9,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
 import javafx.stage.Stage
+import javafx.util.Duration
 import tornadofx.*
 import kotlin.system.exitProcess
 
@@ -49,7 +54,6 @@ class HelloWorld : View("Memories") {
                             count++
                         }
                         skills()
-                        time()
                         points()
                     }
                     isVisible = false
@@ -192,14 +196,26 @@ class HelloWorld : View("Memories") {
         }
     }
 
-    private fun time(): Label = label("Tic-Tac") {
-        prefWidth = 150.0
-        prefHeight = 75.0
-        translateX = 1000.0
-        translateY = 100.0
-        style {
-            backgroundColor += Color.AZURE
-            fontSize = 18.px
+    private fun startTimer() {
+        val timeline = Timeline(KeyFrame(Duration.seconds(0.0), EventHandler { advanceDuration() }), KeyFrame(Duration.seconds(1.0)))
+        timeline.cycleCount = Animation.INDEFINITE
+        timeline.play()
+    }
+    private var seconds = 0
+    private var minutes = 0
+    private var hours = 0
+
+    private fun advanceDuration() {
+        if (seconds < 59) {
+            seconds++
+        } else {
+            seconds = 0
+            if (minutes < 59) {
+                minutes++
+            }else{
+                minutes = 0
+                hours++
+            }
         }
     }
 
