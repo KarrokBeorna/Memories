@@ -1,12 +1,8 @@
 import javafx.animation.Animation
 import javafx.animation.KeyFrame
 import javafx.animation.Timeline
-import javafx.beans.InvalidationListener
-import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
-import javafx.event.ActionEvent
-import javafx.event.Event
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.Group
@@ -19,33 +15,12 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.util.Duration
 import tornadofx.*
-import java.util.*
 import kotlin.system.exitProcess
 
 
-class HelloWorld : View("Memories") {
+class Memories : View("Memories") {
     override val root = Pane()
 
-    val timeLabel = label(KTimer().sspTime.get()) {
-        translateY = 100.0
-        translateX = 1000.0
-        prefWidth = 150.0
-        prefHeight = 50.0
-        alignment = Pos.CENTER
-        style {
-            backgroundColor += Color.AZURE
-            fontSize = 18.px
-        }
-        isVisible = false
-    }
-    private fun kt() {
-        KTimer().sspTime.addListener(InvalidationListener {
-            @Override
-            fun invalidated(observable: Observable) {
-                timeLabel.text = KTimer().sspTime.get()
-            }
-        })
-    }
 
     val run = button("Начало игры") {
             prefWidth = 250.0
@@ -61,15 +36,56 @@ class HelloWorld : View("Memories") {
                 skills()
                 lblPoints().bind(numPoints)
                 isVisible = false
+                timeLabel.isVisible = true
+                timeline()
+                timeLabel.bind(time)
                 progress.isVisible = false
                 newExit()
-                timeLabel.isVisible = true
-                KTimer().startTimer(KTimer().time)
                 newProgress.isVisible = true
             }
+    }
+
+    private val time = SimpleStringProperty()
+
+    private var seconds = 0
+    private var minutes = 0
+    private var hours = 0
+
+    private fun timeline() {
+        val timeline = Timeline(
+            KeyFrame(Duration.seconds(0.0), EventHandler {
+                if (seconds < 59) {
+                    seconds++
+                } else {
+                    seconds = 0
+                    if (minutes < 59) {
+                        minutes++
+                    } else {
+                        minutes = 0
+                        hours++
+                    }
+                }
+                time.set(String.format("%02d:%02d:%02d", hours, minutes, seconds))
+                timeInSeconds.value += 1
+            }),
+            KeyFrame(Duration.seconds(1.0))
+        )
+        timeline.cycleCount = Animation.INDEFINITE
+        timeline.play()
+    }
+
+    private val timeLabel = label {
+        translateY = 100.0
+        translateX = 1000.0
+        prefWidth = 150.0
+        prefHeight = 50.0
+        alignment = Pos.CENTER
+        style {
+            backgroundColor += Color.AZURE
+            fontSize = 18.px
         }
-
-
+        isVisible = false
+    }
     private val progress = button("Достижения") {
         prefWidth = 250.0
         translateX = 558.0
@@ -142,9 +158,12 @@ class HelloWorld : View("Memories") {
 
 
     private val list = mutableListOf<Int>()
+    private val listButtons = mutableListOf<Button>()
     private var count = 0
     private var numPoints = SimpleIntegerProperty()
     private var numPF = SimpleIntegerProperty() + numPoints
+    private var timeInSeconds = SimpleIntegerProperty()
+    private var tISN = SimpleIntegerProperty() + timeInSeconds
 
 
     private fun random(): Image {
@@ -194,15 +213,39 @@ class HelloWorld : View("Memories") {
         }
     }
 
+
     private fun rIF() {
         for (i in 0..63) {
-            button("", imageview(random())) {
+            val btn = button("", imageview(random())) {
+                val runx = 92.0 + (count % 8) * 75.0
+                val runy = 80 + (count / 8) * 75.0
                 translateX = 92.0 + (count % 8) * 75.0
                 translateY = 80.0 + count / 8 * 75.0
-                count++
+                setOnMouseDragged { event ->
+                    val x = event.screenX
+                    val y = event.screenY
+                    if (x < runx) {translateX = runx - 75.0; translateY = runy; listButtons[i - 1].translateX = runx} else {
+                        if (y < runy) {
+                            translateY = runy - 75.0; translateX = runx
+                        } else {
+                            if (x > runx + 75.0) {
+                                translateX = runx + 75.0; translateY = runy
+                            } else {
+                                if (y > runy + 75.0) {
+                                    translateY = runy + 75.0; translateX = runx
+                                } else {
+                                    translateY = runy; translateX = runx
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            count++
+            listButtons.add(btn)
         }
     }
+
 
     private fun field64(): ImageView {
         return imageview("/Icons/Field.jpg") {
@@ -231,6 +274,7 @@ class HelloWorld : View("Memories") {
                 style {
                 backgroundColor += Color.WHITE
                 }
+                bind(numPF / 100)
             }
             button("", imageview("/Icons/Flames.jpg")) {
                 translateX = 800.0
@@ -243,19 +287,7 @@ class HelloWorld : View("Memories") {
                 }
 
             }
-            button("", imageview("/Icons/Bomb.png")) {
-                translateX = 800.0
-                translateY = 400.0
-                setOnMouseClicked {
-                    count = 0
-                    list.clear()
-                    field64()
-                    rIF()
-                    points(64)
-                }
-
-            }
-            label("x") {
+            val lblBomb = label {
                 alignment = Pos.CENTER
                 prefWidth = 35.0
                 translateX = 828.0
@@ -263,6 +295,23 @@ class HelloWorld : View("Memories") {
                 style {
                     backgroundColor += Color.WHITE
                 }
+                bind(tISN / 10)
+            }
+            button("", imageview("/Icons/Bomb.png")) {
+                translateX = 800.0
+                translateY = 400.0
+                setOnMouseClicked {
+                    if (tISN / 10 >= 1) {
+                        count = 0
+                        list.clear()
+                        field64()
+                        rIF()
+                        points(64)
+                        tISN -= 10
+                        lblBomb.bind(tISN / 10)
+                    }
+                }
+
             }
             button("", imageview("/Icons/Acid.jpg")) {
                 translateX = 800.0
@@ -299,77 +348,51 @@ class HelloWorld : View("Memories") {
         }
     }
 
-    /**
-     * Проверяем левую на 1 клетку
-     * Проверяем правую на 1 клетку
-     * Проверяем левую на 2 клетки (в случае если предыдущая совпала с передвинутой)
-     * Проверяем правую на 2 клетки (аналогично второй левой)
-     * Если не набралось хотя бы 2-1-0 или 1-0-1 или 0-1-2, то сбрасываем кол-во повторений (может их получилось 1) и:
-     * Проверяем верхнюю на 1 клетку
-     * Проверяем нижнюю на 1 клетку
-     * Проверяем верхнюю на 2 клетки (аналогично второй левой)
-     * Проверяем нижнюю на 2 клетки (аналогично второй левой)
-     * Если и тут не набралось 2-1-0 или 1-0-1 или 0-1-2, то сбрасываем кол-во повторений и клетка возращается обратно.
+    /** Значит, мы смотрим индекс элемента % 8, если он равен 0, то проверяем [index + 1] и [index + 2]
+     *                                                  равен 1 , то проверяем [index - 1], [index + 1] и [index + 2]
+     *                                                  равен 6, то проверяем [index - 1], [index + 1] и [index - 2]
+     *                                                  равен 7, то проверяем [index - 1] и [index - 2]
+     *                                    иначе проверяем 2 левые и 2 правые
+     * Если верхняя проверка не собрала 3 элементов, то дальше мы смотрим индекс / 8 (предварительно сбросив счётчик),
+     *                                          если он равен 0, то проверяем [index + 8] и [index + 16]
+     *                                                  равен 1, то проверяем [index - 8], [index + 8] и [index + 16]
+     *                                                  равен 6, то проверяем [index - 8], [index + 8] и [index - 16]
+     *                                                  равен 7, то проверяем [index - 8] и [index - 16]
+     *                                    иначе проверяем 2 верхние и 2 нижние
+     * То же самое проделываем с клеткой, которую мы поменяли местами с нашей. По идее мы просто должны поменять
+     * их индексы на некоторое время, чтобы облегчить сравнение.
+     *
+     * Если ни одна из клеток не собрала 3+ в ряд (столбец),
+     * то индексы клеток и сами клетки приходят в исходные состояния.
      */
-    private fun checkLengthDubIc(){
+    private fun killingIcons(){
+
+    }
+
+    /** Восстановление кнопок будет происходить также, как и появление начальных элементов, то есть они не образуют
+     * сразу 3 одинаковых клетки подряд.
+     * Итак, предварительно мы должны узнать индекс первого уничтоженного элемента из прошлой функции, если он
+     *            равен 0, то из random() убираем элементы, которые находятся на [index + 1] и [index + 8]
+     *            равен 7, то из random() убираем элементы, которые находятся на [index - 1] и [index + 8]
+     *            равен 56, то из random() убираем элементы, которые находятся на [index - 8] и [index + 1]
+     *            равен 63, то из random() убираем элементы, которые находятся на [index - 8] и [index - 1]
+     *            in 1..6, то из random() убираем элементы, которые находятся на [index - 1], [index + 1] и [index + 8]
+     *            % 8 = 0, то из random() убираем элементы, которые находятся на [index - 8], [index + 1] и [index + 8]
+     *            % 8 = 7, то из random() убираем элементы, которые находятся на [index - 8], [index - 1] и [index + 8]
+     *          in 57..62, то из random() убираем элементы, которые находятся на [index - 8], [index - 1] и [index + 1]
+     *     иначе из random() убираем элементы, которые находятся на [index - 8], [index - 1], [index + 8] и [index + 1]
+     */
+    private fun deadIcons() {
 
     }
 }
 
 
 
-class HelloWorldApp : App(HelloWorld::class) {
+class MemoriesApp : App(Memories::class) {
         override fun start(stage: Stage) {
             importStylesheet("/style.css")
             super.start(stage)
             stage.isFullScreen =  true
         }
 }
-
-
-
-/** private fun timer(): SimpleStringProperty {
-
-}
-
-private fun secundomer(): Label {
-return label(timer()) {
-alignment = Pos.CENTER
-translateX = 1000.0
-translateY = 100.0
-prefWidth = 150.0
-prefHeight = 75.0
-style {
-backgroundColor += Color.AZURE
-fontSize = 18.px
-}
-isVisible = false
-}
-}
-
-private fun startTimer(time: Long) {
-timer.
-}*/
-/**private val back = button("Главное меню"){
-translateX = 1100.0
-translateY = 575.0
-prefWidth = 250.0
-style {
-backgroundColor += Color.INDIGO
-fontSize = 25.px
-}
-setOnMouseClicked {
-imageview("/Icons/LOTR.jpg")
-runVis()
-progress.isVisible = true
-exit.translateX = 558.0
-exit.translateY = 536.0
-isVisible = false
-}
-isVisible = false
-}
-
-fun runVis(): Button {
-run.isVisible = true
-return run
-} */
