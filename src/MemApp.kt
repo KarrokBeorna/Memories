@@ -224,16 +224,25 @@ class Memories : View("Memories") {
                 setOnMouseDragged { event ->
                     val x = event.screenX
                     val y = event.screenY
-                    if (x < runx) {translateX = runx - 75.0; translateY = runy; listButtons[i - 1].translateX = runx} else {
+                    if (x < runx) {translateX = runx - 75.0; translateY = runy
+                        if (i % 8 != 0) listButtons[i - 1].translateX = runx }
+                    else {
+                        if (i % 8 != 0) listButtons[i - 1].translateX = runx - 75.0
                         if (y < runy) {
                             translateY = runy - 75.0; translateX = runx
-                        } else {
+                            if (i in 8..63) listButtons[i - 8].translateY = runy }
+                        else {
+                            if (i in 8..63) listButtons[i - 8].translateY = runy - 75.0
                             if (x > runx + 75.0) {
                                 translateX = runx + 75.0; translateY = runy
-                            } else {
+                                if (i % 8 != 7) listButtons[i + 1].translateX = runx }
+                            else {
+                                if (i % 8 != 7) listButtons[i + 1].translateX = runx + 75.0
                                 if (y > runy + 75.0) {
                                     translateY = runy + 75.0; translateX = runx
+                                    if (i in 0..55) listButtons[i + 8].translateY = runy
                                 } else {
+                                    if (i in 0..55) listButtons[i + 8].translateY = runy + 75.0
                                     translateY = runy; translateX = runx
                                 }
                             }
@@ -262,6 +271,7 @@ class Memories : View("Memories") {
                 setOnMouseClicked {
                     count = 0
                     list.clear()
+                    listButtons.clear()
                     field64()
                     rIF()
                 }
