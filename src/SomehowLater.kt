@@ -2,10 +2,7 @@ import javafx.scene.image.Image
 import javafx.scene.layout.Pane
 import tornadofx.*
 
-class SomehowLater : View() {
-
-    override val root = Pane()
-
+class SomehowLater {
 
     fun randomImage(num: Int): Image {
         return when (num) {
@@ -17,7 +14,4 @@ class SomehowLater : View() {
             else -> Image("/Icons/WoW.png")
         }
     }
-
-
-
 }
