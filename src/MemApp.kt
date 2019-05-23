@@ -9,8 +9,6 @@ class Memories : View("Memories") {
 
 }
 
-
-
 class MemoriesApp : App(Memories::class) {
         override fun start(stage: Stage) {
             importStylesheet("/style.css")

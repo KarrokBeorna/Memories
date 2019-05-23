@@ -6,17 +6,19 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.Group
+import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
+import javafx.stage.StageStyle
 import javafx.util.Duration
 import tornadofx.*
 import kotlin.system.exitProcess
 
 class GameFunctionality : View()  {
-    override val root = Pane()
+    override val root = Pane(run())
 
 
     private val time = SimpleStringProperty()
@@ -30,9 +32,8 @@ class GameFunctionality : View()  {
     private var numPoints = SimpleIntegerProperty()
     private var numPF = SimpleIntegerProperty() + numPoints
 
-    private var count = 0
     private val listButtons = mutableListOf<Button>()
-    private val list = mutableListOf<Int>()
+    private val list = arrayListOf<Int>()
 
 
     private fun startGame() {
@@ -45,11 +46,10 @@ class GameFunctionality : View()  {
         progress.isVisible = false
         newExit()
         newProgress.isVisible = true
-        randomField(63)
     }
 
 
-    val run = button("Начало игры") {
+    private fun run():Button = button("Начало игры") {
         prefWidth = 250.0
         translateX = 558.0
         translateY = 384.0
@@ -58,8 +58,9 @@ class GameFunctionality : View()  {
             fontSize = 30.px
         }
         setOnMouseClicked {
-            startGame()
             isVisible = false
+            startGame()
+            randomField(63)
         }
     }
 
@@ -73,7 +74,7 @@ class GameFunctionality : View()  {
             fontSize = 30.px
         }
         setOnMouseClicked {
-            sceneProgress()
+            openInternalWindow(MyFragment())
         }
     }
 
@@ -143,7 +144,7 @@ class GameFunctionality : View()  {
         translateY = 640.0
         translateX = 1272.0
         setOnMouseClicked {
-            sceneProgress()
+            openInternalWindow(MyFragment())
         }
         isVisible = false
     }
@@ -157,19 +158,19 @@ class GameFunctionality : View()  {
     }
 
 
-    private fun random(): Int {
+    private fun random(index: Int): Int {
         var random = 0
         while (random == 0) {
             random = (1..6).random()
             when {
-                count in 0..1 || count in 8..9 -> return random
+                index in 0..1 || index in 8..9 -> return random
 
-                count % 8 in 0..1 -> if (random == list[count - 16] && random == list[count - 8]) random = 0
+                index % 8 in 0..1 -> if (random == list[index - 16] && random == list[index - 8]) random = 0
 
-                count in 2..7 || count in 10..15 -> if (random == list[count - 2] && random == list[count - 1]) random = 0
+                index in 2..7 || index in 10..15 -> if (random == list[index - 2] && random == list[index - 1]) random = 0
 
-                else -> if ((random == list[count - 16] && random == list[count - 8])
-                    || (random == list[count - 2] && random == list[count - 1])
+                else -> if ((random == list[index - 16] && random == list[index - 8])
+                    || (random == list[index - 2] && random == list[index - 1])
                 ) random = 0
             }
         }
@@ -177,19 +178,34 @@ class GameFunctionality : View()  {
     }
 
 
-    private fun moving(index1: Int, index2: Int, she: Int, other: Int) {
+    private fun moving(index1: Int, index2: Int) {
+        killCount2.clear()
+        killingIcons(index1, index2)                                          //добавляю в список повторяющиеся
+        killingIcons(index2, index1)                                          //элементы для перемещенных кнопок
+        val she = list[index1]
+        val other = list[index2]
         list.removeAt(index1)                                                 //удаляю из листа 2 числа для иконок
         list.removeAt(index2)
         list.add(index2, she)                                                 //добавляю их обратно, меняя местами
         list.add(index1, other)
-        listButtons[index1].isVisible = false                                    //делаю 2 кнопки невидимыми
+        listButtons[index1].isVisible = false                                 //делаю 2 кнопки невидимыми
         listButtons[index2].isVisible = false
         listButtons.removeAt(index1)                                          //удаляю из листа кнопок нажатый элемент
         listButtons.removeAt(index2)                                          //и тот, с которым нужно поменяться местами
         listButtons.add(index2, icBtn(index2, she))                           //добавляю в лист кнопки с
         listButtons.add(index1, icBtn(index1, other))                         //новыми координатами, которые
-    }                                                                         //могу продолжать двигать
-    
+                                                                              //могу продолжать двигать
+        for (ind in killCount2.sortedDescending()) {
+            listButtons[ind].isVisible = false                                //убираю кнопки с поля и с листов
+            list.removeAt(ind)
+            list.add(ind, 0)                                          //вставляю на место номеров картинок - нули
+            listButtons.removeAt(ind)
+        }
+        for (ind in killCount2.sorted())                                      //создаю новые кнопки на месте уничтоженных
+            renewal(ind)
+        points(killCount2.size)                                               //добавляю баллы
+    }
+
 
     private fun icBtn(index: Int, num: Int): Button = button("", imageview(SomehowLater().randomImage(num))) {
         val runx = 92.0 + index % 8 * 75.0
@@ -198,39 +214,18 @@ class GameFunctionality : View()  {
         translateY = runy
         setOnMouseDragged { event ->
             val x = event.screenX
-            val y = event.screenY
-            val she = list[index]
-            if (x < runx) {
-                if (index % 8 != 0) {
-                    val left = list[index - 1]
-                    moving(index, index - 1, she, left)
-                    killingIcons(index - 1)
-                    killingIcons(index)
-                }
-            } else {
-                if (y < runy) {
-                    if (index in 8..63) {
-                        val top = list[index - 8]
-                        moving(index, index - 8, she, top)
-                        killingIcons(index)
-                        killingIcons(index - 8)
-                    }
-                } else {
-                    if (x > runx + 75.0) {
-                        if (index % 8 != 7) {
-                            val right = list[index + 1]
-                            moving(index + 1, index, right, she)
-                            killingIcons(index)
-                            killingIcons(index + 1)
-                        }
-                    } else {
-                        if (y > runy + 75.0) {
-                            if (index in 0..55) {
-                                val bot = list[index + 8]
-                                moving(index + 8, index, bot, she)
-                                killingIcons(index)
-                                killingIcons(index + 8)
-                            }
+            val y = event.screenY                           //действие с левой кнопкой
+            if (x < runx && index % 8 != 0 && (killingIcons(index, index - 1) || (killingIcons(index - 1, index)))) {
+                moving(index, index - 1)
+            } else {                                            //действие с верхней кнопкой
+                if (y < runy && index in 8..63 && (killingIcons(index, index - 8) || (killingIcons(index - 8, index)))) {
+                    moving(index, index - 8)
+                } else {                                            //действие с правой кнопкой
+                    if (x > runx + 75.0 && index % 8 != 7 && (killingIcons(index, index + 1) || (killingIcons(index + 1, index)))) {
+                        moving(index + 1, index)
+                    } else {                                            //действие с нижней кнопкой
+                        if (y > runy + 75.0 && index in 0..55 && (killingIcons(index, index + 8) || (killingIcons(index + 8, index)))) {
+                            moving(index + 8, index)
                         }
                     }
                 }
@@ -241,9 +236,8 @@ class GameFunctionality : View()  {
 
     private fun randomField(num: Int) {
         for (i in 0..num) {
-            val rnd = random()
+            val rnd = random(i)
             val a = icBtn(i, rnd)
-            count++
             list.add(rnd)
             listButtons.add(a)
         }
@@ -256,9 +250,8 @@ class GameFunctionality : View()  {
                 translateX = 800.0
                 translateY = 100.0
                 setOnMouseClicked {
-                    count = 0
-                    list.clear()
                     listButtons.clear()
+                    list.clear()
                     field64()
                     randomField(63)
                 }
@@ -299,7 +292,6 @@ class GameFunctionality : View()  {
                 translateY = 400.0
                 setOnMouseClicked {
                     if (tISN / 10 >= 1) {
-                        count = 0
                         list.clear()
                         listButtons.clear()
                         field64()
@@ -349,8 +341,171 @@ class GameFunctionality : View()  {
     }
 
 
-    private fun sceneProgress(): Group {
-        return group {
+
+    /**   1) Для разных видов перемещения сравниваемся с разными индексами. Сначала по горизонтали, затем по вертикали.
+     *    2) Добавляем в killCount индексы кнопок, которые необходимо уничтожить.
+     * То же самое проделываем с кнопкой, которую мы поменяли местами с нашей.
+     *    3) Далее уничтожаем их. Удаляем из листа кнопок эти кнопки. Удаляем из листа картинок для кнопок эти картинки
+     * и вставляем на их индексы временные нули для упрощения дальнейшего появления новых клеток.
+     *    4) Создаем новые клетки, которые не создадут случай мгновенного образования трёх одинаковых клеток.
+     * При этом, конечно, до создания сначала перезаписываем нули в листе на нормальные значения картинок.
+     */
+
+    private val killCount = mutableListOf<Int>()
+    private val killCount2 = mutableListOf<Int>()
+
+    private fun killLength(index: Int, index2: Int){
+        val minus = index - index2
+        killCount.clear()
+        killCount.add(index2)
+        checkLeft(index, minus)
+        checkRight(index, minus)
+        if (killCount.size < 3) {
+            killCount.clear()
+            killCount.add(index2)
+            checkTop(index, minus)
+            checkBottom(index, minus)
+        }
+    }
+
+    private fun killingIcons(index: Int, index2: Int):Boolean {
+        killLength(index, index2)
+        if (killCount.size >= 3) {
+            killCount.forEach { killCount2.add(it) }
+            return true
+        }
+        return false
+    }
+
+
+    private fun checkRight(index: Int, minus: Int) {
+        when (minus) {
+            -1 -> when {
+                index % 8 == 5 -> if (list[index] == list[index + 2]) killCount.add(index + 2)
+                index % 8 in 0..4 -> if (list[index] == list[index + 3] && list[index] == list[index + 2]) {
+                    killCount.add(index + 3)
+                    killCount.add(index + 2)
+                } else if (list[index] == list[index + 2]) killCount.add(index + 2)
+            }
+            8 -> when {
+                index % 8 == 6 -> if (list[index] == list[index - 7]) killCount.add(index - 7)
+                index % 8 in 0..5 -> if (list[index] == list[index - 7] && list[index] == list[index - 6]) {
+                    killCount.add(index - 7)
+                    killCount.add(index - 6)
+                } else if (list[index] == list[index - 7]) killCount.add(index - 7)
+            }
+            -8 -> when {
+                index % 8 == 6 -> if (list[index] == list[index + 9]) killCount.add(index + 9)
+                index % 8 in 0..5 -> if (list[index] == list[index + 9] && list[index] == list[index + 10]) {
+                    killCount.add(index + 9)
+                    killCount.add(index + 10)
+                } else if (list[index] == list[index + 9]) killCount.add(index + 9)
+            }
+        }
+    }
+    private fun checkLeft(index: Int, minus: Int){
+        when (minus) {
+            1 -> when {
+                index % 8 == 2 -> if (list[index] == list[index - 2]) killCount.add(index - 2)
+                index % 8 in 3..7 -> if (list[index] == list[index - 2] && list[index] == list[index - 3]) {
+                    killCount.add(index - 2)
+                    killCount.add(index - 3)
+                } else if (list[index] == list[index - 2]) killCount.add(index - 2)
+            }
+            8 -> when {
+                index % 8 == 1 -> if (list[index] == list[index - 9]) killCount.add(index - 9)
+                index % 8 in 2..7 -> if (list[index] == list[index - 9] && list[index] == list[index - 10]) {
+                    killCount.add(index - 9)
+                    killCount.add(index - 10)
+                } else if (list[index] == list[index - 9]) killCount.add(index - 9)
+            }
+            -8 -> when {
+                index % 8 == 1 -> if (list[index] == list[index + 7]) killCount.add(index + 7)
+                index % 8 in 2..7 -> if (list[index] == list[index + 7] && list[index] == list[index + 6]) {
+                    killCount.add(index + 7)
+                    killCount.add(index + 6)
+                } else if (list[index] == list[index + 7]) killCount.add(index + 7)
+            }
+        }
+    }
+    private fun checkTop(index: Int, minus: Int){
+        when (minus) {
+            -1 -> when {
+                index / 8 == 1 -> if (list[index] == list[index - 7]) killCount.add(index - 7)
+                index / 8 in 2..7 -> if (list[index] == list[index - 7] && list[index] == list[index - 15]) {
+                    killCount.add(index - 7)
+                    killCount.add(index - 15)
+                } else if (list[index] == list[index - 7]) killCount.add(index - 7)
+            }
+            8 -> when {
+                index / 8 == 2 -> if (list[index] == list[index - 16]) killCount.add(index - 16)
+                index / 8 in 3..7 -> if (list[index] == list[index - 16] && list[index] == list[index - 24]) {
+                    killCount.add(index - 16)
+                    killCount.add(index - 24)
+                } else if (list[index] == list[index - 16]) killCount.add(index - 16)
+            }
+            1 -> when {
+                index / 8 == 1 -> if (list[index] == list[index - 9]) killCount.add(index - 9)
+                index / 8 in 2..7 -> if (list[index] == list[index - 9] && list[index] == list[index - 17]) {
+                    killCount.add(index - 9)
+                    killCount.add(index - 17)
+                } else if (list[index] == list[index - 9]) killCount.add(index - 9)
+            }
+        }
+    }
+    private fun checkBottom(index: Int, minus: Int){
+        when (minus) {
+            -1 -> when {
+                index / 8 == 6 -> if (list[index] == list[index + 9]) killCount.add(index + 9)
+                index / 8 in 0..5 -> if (list[index] == list[index + 9] && list[index] == list[index + 17]) {
+                    killCount.add(index + 9)
+                    killCount.add(index + 17)
+                } else if (list[index] == list[index + 9]) killCount.add(index + 9)
+            }
+            1 -> when {
+                index / 8 == 6 -> if (list[index] == list[index + 7]) killCount.add(index + 7)
+                index / 8 in 0..5 -> if (list[index] == list[index + 7] && list[index] == list[index + 15]) {
+                    killCount.add(index + 7)
+                    killCount.add(index + 15)
+                } else if (list[index] == list[index + 7]) killCount.add(index + 7)
+            }
+            -8 -> when {
+                index / 8 == 5 -> if (list[index] == list[index + 16]) killCount.add(index + 16)
+                index / 8 in 0..4 -> if (list[index] == list[index + 16] && list[index] == list[index + 24]) {
+                    killCount.add(index + 16)
+                    killCount.add(index + 24)
+                } else if (list[index] == list[index + 16]) killCount.add(index + 16)
+            }
+        }
+    }
+
+
+    private fun randomForRenewal(index: Int): Int {
+        var random = 0
+        while (random == 0) {
+            random = (1..6).random()
+            if (index / 8 in 0..5) if (random == list[index + 8] && random == list[index + 16]) random = 0
+            if (index / 8 in 2..7) if (random == list[index - 8] && random == list[index - 16]) random = 0
+            if (index % 8 in 0..5) if (random == list[index + 1] && random == list[index + 2]) random = 0
+            if (index % 8 in 2..7) if (random == list[index - 1] && random == list[index - 2]) random = 0
+            if (index / 8 in 1..6) if (random == list[index - 8] && random == list[index + 8]) random = 0
+            if (index % 8 in 1..6) if (random == list[index - 1] && random == list[index + 1]) random = 0
+        }
+        list.removeAt(index)
+        list.add(index, random)
+        return random
+    }
+
+
+    private fun renewal(index: Int) {
+        listButtons.add(index, icBtn(index, randomForRenewal(index)))
+    }
+}
+
+class MyFragment: Fragment() {
+    override val root = pane {
+        translateY = -33.0
+        translateX = -5.0
             rectangle {
                 fill = Color.GRAY
                 width = 1366.0
@@ -375,133 +530,18 @@ class GameFunctionality : View()  {
                 }
                 action { exitProcess(1) }
             }
-        }
-    }
-
-
-    /** Значит, мы смотрим индекс элемента % 8, если он равен 0, то проверяем [index + 1] и [index + 2]
-     *                                                  равен 1 , то проверяем [index - 1], [index + 1] и [index + 2]
-     *                                                  равен 6, то проверяем [index - 1], [index + 1] и [index - 2]
-     *                                                  равен 7, то проверяем [index - 1] и [index - 2]
-     *                                    иначе проверяем 2 левые и 2 правые
-     * Если верхняя проверка не собрала 3 элементов, то дальше мы смотрим индекс / 8 (предварительно сбросив счётчик),
-     *                                          если он равен 0, то проверяем [index + 8] и [index + 16]
-     *                                                  равен 1, то проверяем [index - 8], [index + 8] и [index + 16]
-     *                                                  равен 6, то проверяем [index - 8], [index + 8] и [index - 16]
-     *                                                  равен 7, то проверяем [index - 8] и [index - 16]
-     *                                    иначе проверяем 2 верхние и 2 нижние
-     * То же самое проделываем с клеткой, которую мы поменяли местами с нашей. По идее мы просто должны поменять
-     * их индексы на некоторое время, чтобы облегчить сравнение.
-     *
-     * Если ни одна из клеток не собрала 3+ в ряд (столбец),
-     * то индексы клеток и сами клетки приходят в исходные состояния.
-     */
-
-    private var killCount = mutableListOf<Int>()
-
-    private fun killLength(index: Int){
-        killCount.clear()
-        killCount.add(index)
-        checkLeft(index)
-        checkRight(index)
-        if (killCount.size < 3) {
-            killCount.clear()
-            killCount.add(index)
-            checkTop(index)
-            checkBottom(index)
-        }
-    }
-
-    private fun killingIcons(index: Int) {
-        killLength(index)
-        if (killCount.size >= 3) {
-            for (ind in killCount.sortedDescending()) {
-                listButtons[ind].isVisible = false
-            }
-            when (killCount.size) {
-                3 -> points(3)
-                4 -> points(7)
-                5 -> points(15)
-            }
-        }
-    }
-
-    private fun checkRight(index: Int) {
-        when {
-            index % 8 == 6 -> if (list[index] == list[index + 1]) {
-                killCount.add(index + 1)
-            }
-            index % 8 in 0..5 -> if (list[index] == list[index + 1] && list[index] == list[index + 2]) {
-                killCount.add(index + 1)
-                killCount.add(index + 2)
-            } else {
-                if (list[index] == list[index + 1]) {
-                    killCount.add(index + 1)
+            button("Назад") {
+                prefWidth = 70.0
+                prefHeight = 40.0
+                translateX = 1280.0
+                translateY = 670.0
+                style {
+                    backgroundColor += Color.GREENYELLOW
+                    fontSize = 15.px
+                }
+                setOnMouseClicked {
+                    close()
                 }
             }
         }
-    }
-    private fun checkLeft(index: Int){
-        when {
-            index % 8 == 1 -> if (list[index] == list[index - 1]) {
-                killCount.add(index - 1)
-            }
-            index % 8 in 2..7 -> if (list[index] == list[index - 1] && list[index] == list[index - 2]) {
-                killCount.add(index - 1)
-                killCount.add(index - 2)
-            } else {
-                if (list[index] == list[index - 1]) {
-                    killCount.add(index - 1)
-                }
-            }
-        }
-    }
-    private fun checkTop(index: Int){
-        when {
-            index / 8 == 1 -> if (list[index] == list[index - 8]) {
-                killCount.add(index - 8)
-            }
-            index / 8 in 2..7 -> if (list[index] == list[index - 8] && list[index] == list[index - 16]) {
-                killCount.add(index - 8)
-                killCount.add(index - 16)
-            } else {
-                if (list[index] == list[index - 8]) {
-                    killCount.add(index - 8)
-                }
-            }
-        }
-    }
-    private fun checkBottom(index: Int){
-        when {
-            index / 8 == 6 -> if (list[index] == list[index + 8]) {
-                killCount.add(index + 8)
-            }
-            index / 8 in 0..5 -> if (list[index] == list[index + 8] && list[index] == list[index + 16]) {
-                killCount.add(index + 8)
-                killCount.add(index + 16)
-            } else {
-                if (list[index] == list[index + 8]) {
-                    killCount.add(index + 8)
-                }
-            }
-        }
-    }
-
-
-    /** Восстановление кнопок будет происходить также, как и появление начальных элементов, то есть они не образуют
-     * сразу 3 одинаковых клетки подряд.
-     * Итак, предварительно мы должны узнать индекс первого уничтоженного элемента из прошлой функции, если он
-     *            равен 0, то из random() убираем элементы, которые находятся на [index + 1] и [index + 8]
-     *            равен 7, то из random() убираем элементы, которые находятся на [index - 1] и [index + 8]
-     *            равен 56, то из random() убираем элементы, которые находятся на [index - 8] и [index + 1]
-     *            равен 63, то из random() убираем элементы, которые находятся на [index - 8] и [index - 1]
-     *            in 1..6, то из random() убираем элементы, которые находятся на [index - 1], [index + 1] и [index + 8]
-     *            % 8 = 0, то из random() убираем элементы, которые находятся на [index - 8], [index + 1] и [index + 8]
-     *            % 8 = 7, то из random() убираем элементы, которые находятся на [index - 8], [index - 1] и [index + 8]
-     *          in 57..62, то из random() убираем элементы, которые находятся на [index - 8], [index - 1] и [index + 1]
-     *     иначе из random() убираем элементы, которые находятся на [index - 8], [index - 1], [index + 8] и [index + 1]
-     */
-    private fun renewal() {
-
-    }
 }
