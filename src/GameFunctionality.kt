@@ -23,7 +23,8 @@ class GameFunctionality : View()  {
 
     private val time = SimpleStringProperty()
     private var timeInSeconds = SimpleIntegerProperty()
-    private var tISN = SimpleIntegerProperty() + timeInSeconds
+    private var tISBomb = SimpleIntegerProperty() + timeInSeconds
+    private var tISAcid = SimpleIntegerProperty() + timeInSeconds
 
     private var seconds = 0
     private var minutes = 0
@@ -31,6 +32,7 @@ class GameFunctionality : View()  {
 
     private var numPoints = SimpleIntegerProperty()
     private var numPF = SimpleIntegerProperty() + numPoints
+    private var doubling = SimpleIntegerProperty()
 
     private val listButtons = mutableListOf<Button>()
     private val list = arrayListOf<Int>()
@@ -38,7 +40,6 @@ class GameFunctionality : View()  {
 
     private fun startGame() {
         field64()
-        skills()
         lblPoints().bind(numPoints)
         timeLabel.isVisible = true
         timeline()
@@ -46,6 +47,8 @@ class GameFunctionality : View()  {
         progress.isVisible = false
         newExit()
         newProgress.isVisible = true
+        skills()
+        randomField(63)
     }
 
 
@@ -60,7 +63,6 @@ class GameFunctionality : View()  {
         setOnMouseClicked {
             isVisible = false
             startGame()
-            randomField(63)
         }
     }
 
@@ -201,9 +203,13 @@ class GameFunctionality : View()  {
             list.add(ind, 0)                                          //вставляю на место номеров картинок - нули
             listButtons.removeAt(ind)
         }
+
         for (ind in killCount2.sorted())                                      //создаю новые кнопки на месте уничтоженных
             renewal(ind)
-        points(killCount2.size)                                               //добавляю баллы
+        if (doubling.value > 0) {                                             //добавляю баллы
+            points(killCount2.size * 2)
+            doubling.value--
+        } else points(killCount2.size)
     }
 
 
@@ -269,13 +275,19 @@ class GameFunctionality : View()  {
             button("", imageview("/Icons/Flames.jpg")) {
                 translateX = 800.0
                 translateY = 250.0
-                setOnMouseClicked {if (numPF / 100 >= 1) {
-                    points(16)
-                    numPF -= 100
-                    lblFlames.bind(numPF / 100)
+                setOnMouseDragged {
+                    if (numPF / 100 >= 1) {
+                        setOnMouseReleased { event ->
+                            val indexY = ((event.screenY - 80) / 75).toInt()
+                            val indexX = ((event.screenX - 92) / 75).toInt()
+                            val index = indexY * 8 + indexX
+                            if (indexX > 7 || indexY > 7) burning(1000) else burning(index)
+                            points(16)
+                            numPF -= 100
+                            lblFlames.bind(numPF / 100)
+                        }
+                    }
                 }
-                }
-
             }
             val lblBomb = label {
                 alignment = Pos.CENTER
@@ -285,38 +297,43 @@ class GameFunctionality : View()  {
                 style {
                     backgroundColor += Color.WHITE
                 }
-                bind(tISN / 10)
+                bind(tISBomb / 10)
             }
             button("", imageview("/Icons/Bomb.png")) {
                 translateX = 800.0
                 translateY = 400.0
                 setOnMouseClicked {
-                    if (tISN / 10 >= 1) {
+                    if (tISBomb / 10 >= 1) {
                         list.clear()
                         listButtons.clear()
                         field64()
                         randomField(63)
                         points(64)
-                        tISN -= 10
-                        lblBomb.bind(tISN / 10)
+                        tISBomb -= 10
+                        lblBomb.bind(tISBomb / 10)
                     }
                 }
 
             }
-            button("", imageview("/Icons/Acid.jpg")) {
-                translateX = 800.0
-                translateY = 550.0
-                setOnMouseClicked {
-
-                }
-            }
-            label("x") {
+            val lblAcid = label {
                 alignment = Pos.CENTER
                 prefWidth = 35.0
                 translateX = 828.0
                 translateY = 634.0
                 style {
                     backgroundColor += Color.WHITE
+                }
+                bind(tISAcid / 10)
+            }
+            button("", imageview("/Icons/Acid.jpg")) {
+                translateX = 800.0
+                translateY = 550.0
+                setOnMouseClicked {
+                    if (tISAcid / 10 >= 1) {
+                        doubling.value += 10
+                        tISAcid -= 10
+                        lblAcid.bind(tISAcid / 10)
+                    }
                 }
             }
         }
@@ -351,8 +368,8 @@ class GameFunctionality : View()  {
      * При этом, конечно, до создания сначала перезаписываем нули в листе на нормальные значения картинок.
      */
 
-    private val killCount = mutableListOf<Int>()
-    private val killCount2 = mutableListOf<Int>()
+    private val killCount = mutableSetOf<Int>()
+    private val killCount2 = mutableSetOf<Int>()
 
     private fun killLength(index: Int, index2: Int){
         val minus = index - index2
@@ -499,6 +516,30 @@ class GameFunctionality : View()  {
 
     private fun renewal(index: Int) {
         listButtons.add(index, icBtn(index, randomForRenewal(index)))
+    }
+
+
+    private fun burning(index: Int) {
+        killCount2.clear()
+        when {
+            index % 8 in 0..4 && index / 8 in 0..4 ->
+                for (i in 0..3) killCount2 += listOf(index + i*8, index + 1 + i*8, index + 2 + i*8, index + 3 + i*8)
+            index % 8 in 5..7 && index / 8 in 0..4 ->
+                for (i in 0..3) killCount2 += listOf(index + i*8, index - 1 + i*8, index - 2 + i*8, index - 3 + i*8)
+            index % 8 in 0..4 && index / 8 in 5..7 ->
+                for (i in 0..3) killCount2 += listOf(index - i*8, index + 1 - i*8, index + 2 - i*8, index + 3 - i*8)
+            index % 8 in 5..7 && index / 8 in 5..7 ->
+                for (i in 0..3) killCount2 += listOf(index - i*8, index - 1 - i*8, index - 2 - i*8, index - 3 - i*8)
+            else -> killCount2 += listOf(18, 19, 20, 21, 26, 27, 28, 29, 34, 35, 36, 37, 42, 43, 44, 45)
+        }
+        for (ind in killCount2.sortedDescending()) {
+            listButtons[ind].isVisible = false
+            list.removeAt(ind)
+            list.add(ind, 0)
+            listButtons.removeAt(ind)
+        }
+        for (ind in killCount2.sorted())
+            renewal(ind)
     }
 }
 
