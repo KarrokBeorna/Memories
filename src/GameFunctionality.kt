@@ -9,16 +9,24 @@ import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.Label
+import javafx.scene.control.ScrollPane
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Pane
+import javafx.scene.media.Media
+import javafx.scene.media.MediaPlayer
+import javafx.scene.media.MediaView
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
 import javafx.stage.StageStyle
 import javafx.util.Duration
 import tornadofx.*
+import java.io.File
+import java.lang.Exception
 import kotlin.system.exitProcess
 
 class GameFunctionality : View()  {
-    override val root = Pane(run())
+    override val root = Pane()
 
 
     private val time = SimpleStringProperty()
@@ -52,7 +60,7 @@ class GameFunctionality : View()  {
     }
 
 
-    private fun run():Button = button("Начало игры") {
+    private val run = button("Начало игры") {
         prefWidth = 250.0
         translateX = 558.0
         translateY = 384.0
@@ -76,7 +84,7 @@ class GameFunctionality : View()  {
             fontSize = 30.px
         }
         setOnMouseClicked {
-            openInternalWindow(MyFragment())
+            find<MyFragment>().openModal(StageStyle.UNDECORATED)
         }
     }
 
@@ -88,7 +96,17 @@ class GameFunctionality : View()  {
             backgroundColor += Color.RED
             fontSize = 30.px
         }
-        action { exitProcess(1) }
+        action {
+            val timeFile = File("Time.txt")
+            val timePoints = timeFile.readText()
+            val newTime = Integer.parseInt(timePoints) + timeInSeconds.value
+            timeFile.bufferedWriter().use {out -> out.write("$newTime")}
+            val pointsFile = File("Points.txt")
+            val points = pointsFile.readText()
+            val newPoints = Integer.parseInt(points) + numPoints.value
+            pointsFile.bufferedWriter().use {out -> out.write("$newPoints")}
+            exitProcess(1)
+        }
     }
 
 
@@ -127,6 +145,9 @@ class GameFunctionality : View()  {
             fontSize = 18.px
         }
         isVisible = false
+        tooltip("Прошедшее время. При выходе\nдобавляется ко времени из прошлых игр") {
+            font = Font.font(13.0)
+        }
     }
 
 
@@ -146,7 +167,7 @@ class GameFunctionality : View()  {
         translateY = 640.0
         translateX = 1272.0
         setOnMouseClicked {
-            openInternalWindow(MyFragment())
+            find<MyFragment>().openModal(StageStyle.UNDECORATED)
         }
         isVisible = false
     }
@@ -261,6 +282,9 @@ class GameFunctionality : View()  {
                     field64()
                     randomField(63)
                 }
+                tooltip("Обновляет поле при нажатии") {
+                    font = Font.font(13.0)
+                }
             }
             val lblFlames = label {
                 alignment = Pos.CENTER
@@ -288,6 +312,9 @@ class GameFunctionality : View()  {
                         }
                     }
                 }
+                tooltip("Уничтожает 16 элементов, в\nзависимости, куда наведен курсор.\nДобавляется каждые 100 баллов") {
+                    font = Font.font(13.0)
+                }
             }
             val lblBomb = label {
                 alignment = Pos.CENTER
@@ -297,43 +324,61 @@ class GameFunctionality : View()  {
                 style {
                     backgroundColor += Color.WHITE
                 }
-                bind(tISBomb / 10)
+                bind(tISBomb / 300)
             }
             button("", imageview("/Icons/Bomb.png")) {
                 translateX = 800.0
                 translateY = 400.0
                 setOnMouseClicked {
-                    if (tISBomb / 10 >= 1) {
+                    if (tISBomb / 300 >= 1) {
                         list.clear()
                         listButtons.clear()
                         field64()
                         randomField(63)
                         points(64)
-                        tISBomb -= 10
-                        lblBomb.bind(tISBomb / 10)
+                        tISBomb -= 300
+                        lblBomb.bind(tISBomb / 300)
                     }
                 }
-
+                tooltip("Уничтожает всё поле.\nДобавляется каждые 5 минут") {
+                    font = Font.font(13.0)
+                }
             }
             val lblAcid = label {
                 alignment = Pos.CENTER
-                prefWidth = 35.0
-                translateX = 828.0
+                prefWidth = 30.0
+                translateX = 853.0
                 translateY = 634.0
                 style {
                     backgroundColor += Color.WHITE
                 }
-                bind(tISAcid / 10)
+                bind(tISAcid / 180)
+            }
+            val lblAcidNum = label {
+                alignment = Pos.CENTER
+                prefWidth = 30.0
+                translateX = 808.0
+                translateY = 634.0
+                style {
+                    backgroundColor += Color.WHITE
+                }
+                bind(doubling)
+                tooltip("Количество оставшихся удвоений") {
+                    font = Font.font(13.0)
+                }
             }
             button("", imageview("/Icons/Acid.jpg")) {
                 translateX = 800.0
                 translateY = 550.0
                 setOnMouseClicked {
-                    if (tISAcid / 10 >= 1) {
+                    if (tISAcid / 180 >= 1) {
                         doubling.value += 10
-                        tISAcid -= 10
-                        lblAcid.bind(tISAcid / 10)
+                        tISAcid -= 180
+                        lblAcid.bind(tISAcid / 180)
                     }
+                }
+                tooltip("При нажатии удваивает баллы\nна 10 уничтожений. Добавляется\nкаждые 3 минуты") {
+                    font = Font.font(13.0)
                 }
             }
         }
@@ -348,12 +393,15 @@ class GameFunctionality : View()  {
     private fun lblPoints(): Label = label {
         alignment = Pos.CENTER
         prefWidth = 150.0
-        prefHeight = 75.0
+        prefHeight = 50.0
         translateX = 1000.0
         translateY = 200.0
         style {
             backgroundColor += Color.AZURE
             fontSize = 18.px
+        }
+        tooltip("Количество баллов. При выходе\nдобавляется к баллам из прошлых игр") {
+            font = Font.font(13.0)
         }
     }
 
@@ -544,45 +592,72 @@ class GameFunctionality : View()  {
 }
 
 class MyFragment: Fragment() {
-    override val root = pane {
-        translateY = -33.0
-        translateX = -5.0
+    override val root = scrollpane {
+        setPrefSize(1366.0, 768.0)
+        vbarPolicy = ScrollPane.ScrollBarPolicy.ALWAYS
+        hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
+    }
+    val pane = pane {
+        rectangle {
+            width = 1351.0
+            height = 3849.0
+            fill = Color.LIGHTGRAY
+        }
+        for (i in 1..48) {
             rectangle {
-                fill = Color.GRAY
-                width = 1366.0
-                height = 768.0
+                translateX = ((i - 1) % 3) * 422.0 + 100.0
+                width = 322.0
+                height = 180.0
+                translateY = ((i - 1) / 3) * 237.0 + 57.0
+                fill = Color.BLACK
             }
-            for (i in 1..9)
-                rectangle {
-                    translateX = ((i - 1) % 3) * 422.0 + 100.0 //100 522 944
-                    width = 322.0
-                    height = 200.0
-                    translateY = ((i - 1) / 3) * 234.0 + 50.0 //50 284 518
-                    fill = Color.BLACK
-                }
-            button("Выход") {
-                prefWidth = 70.0
-                prefHeight = 40.0
-                translateX = 1280.0
-                translateY = 715.0
+            label {
+                translateX = ((i - 1) % 3) * 422.0 + 100.0
+                translateY = ((i - 1) / 3) * 237.0 + 247.0
+                prefWidth = 322.0
+                prefHeight = 30.0
                 style {
-                    backgroundColor += Color.RED
-                    fontSize = 15.px
-                }
-                action { exitProcess(1) }
-            }
-            button("Назад") {
-                prefWidth = 70.0
-                prefHeight = 40.0
-                translateX = 1280.0
-                translateY = 670.0
-                style {
-                    backgroundColor += Color.GREENYELLOW
-                    fontSize = 15.px
-                }
-                setOnMouseClicked {
-                    close()
+                    backgroundColor += Color.WHITE
                 }
             }
         }
+        button("Назад") {
+            prefWidth = 70.0
+            translateX = 1280.0
+            translateY = 20.0
+            style {
+                backgroundColor += Color.GREENYELLOW
+                fontSize = 15.px
+            }
+            setOnMouseClicked {
+                close()
+            }
+        }
+        button("") {
+            translateX = 100.0
+            prefWidth = 322.0
+            prefHeight = 180.0
+            translateY = 57.0
+            style {
+                backgroundColor += Color.DARKGREEN
+            }
+            setOnMouseClicked {
+
+            }
+        }
+    }
+}
+
+class SomehowLater {
+
+    fun randomImage(num: Int): Image {
+        return when (num) {
+            1 -> Image("/Icons/Harry Potter.jpg")
+            2 -> Image("/Icons/GOT.jpg")
+            3 -> Image("/Icons/HTTYD.jpg")
+            4 -> Image("/Icons/Star Wars.png")
+            5 -> Image("/Icons/The Lord of The Rings.png")
+            else -> Image("/Icons/WoW.png")
+        }
+    }
 }
