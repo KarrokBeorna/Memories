@@ -13,6 +13,6 @@ class MemoriesApp : App(Memories::class) {
         override fun start(stage: Stage) {
             importStylesheet("/style.css")
             super.start(stage)
-            stage.isFullScreen =  true
+            stage.isFullScreen = true
         }
 }
