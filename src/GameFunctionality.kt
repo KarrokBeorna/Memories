@@ -39,6 +39,11 @@ class GameFunctionality : Fragment()  {
     private val list = mutableListOf<Int>()
 
 
+
+
+
+
+
     private fun startGame() {                       //действие при нажатии кнопки "Начало игры"
         lblPoints().bind(numPoints)
         timeLabel.isVisible = true
@@ -93,10 +98,10 @@ class GameFunctionality : Fragment()  {
             val timeFile = File("Time.txt")
             val timePoints = timeFile.readText()
             val newTime = Integer.parseInt(timePoints) + timeInSeconds.value
-            timeFile.bufferedWriter().use {out -> out.write("$newTime")}
             val pointsFile = File("Points.txt")
             val points = pointsFile.readText()
             val newPoints = Integer.parseInt(points) + numPoints.value
+            timeFile.bufferedWriter().use {out -> out.write("$newTime")}
             pointsFile.bufferedWriter().use {out -> out.write("$newPoints")}
             exitProcess(1)
         }
