@@ -39,11 +39,6 @@ class GameFunctionality : Fragment()  {
     private val list = mutableListOf<Int>()
 
 
-
-
-
-
-
     private fun startGame() {                       //действие при нажатии кнопки "Начало игры"
         lblPoints().bind(numPoints)
         timeLabel.isVisible = true
@@ -252,9 +247,9 @@ class GameFunctionality : Fragment()  {
         return imageview(randomImage(num)) {
         val runx = 100.0 + index % 8 * 75.0
         val runy = 84.0 + index / 8 * 75.0
-        translateX = runx                                       //главный игровой элемент - кнопка
+        translateX = runx                                                   //главный игровой элемент - кнопка
         translateY = runy
-        setOnMouseDragged { event ->
+        setOnMouseReleased { event ->
             val x = event.screenX
             val y = event.screenY                                      //действие с левой кнопкой
             if (x < runx && index % 8 != 0 && (killingIcons(index, index - 1) || (killingIcons(index - 1, index)))) {
