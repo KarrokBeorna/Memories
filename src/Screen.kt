@@ -316,7 +316,7 @@ class Screen : Fragment()  {
 
 
     //панелька для очков
-    private val lblPoints = label {                //панель для баллов
+    private val lblPoints = label {
         alignment = Pos.CENTER
         prefWidth = 150.0
         prefHeight = 50.0
