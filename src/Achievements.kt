@@ -15,6 +15,8 @@ class Achievements: Fragment() {
         hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
     }
 
+    private val audio: Audio by inject()
+
     private val pointsFile = File("Points.txt").readText()
     private val numP = Integer.parseInt(pointsFile)
     private val timeFile = File("Time.txt").readText()
@@ -79,15 +81,6 @@ class Achievements: Fragment() {
             height = 3849.0
             fill = Color.LIGHTGRAY
         }
-        for (i in 1..48) {
-            rectangle {
-                translateX = ((i - 1) % 3) * 422.0 + 100.0
-                width = 322.0
-                height = 180.0
-                translateY = ((i - 1) / 3) * 237.0 + 57.0
-                fill = Color.BLACK
-            }
-        }
         button("Назад") {
             prefWidth = 70.0
             translateX = 1280.0
@@ -98,11 +91,12 @@ class Achievements: Fragment() {
             }
             setOnMouseClicked {
                 close()
+                audio.mdp.play()
             }
         }
 
         fun video(name: String) {
-            val md = Media(GameFunctionality::class.java.getResource(name).toExternalForm())
+            val md = Media(Achievements::class.java.getResource(name).toExternalForm())
             val mdp = MediaPlayer(md)
             val mdv = MediaView(mdp)
             mdv.isPreserveRatio = false
@@ -110,6 +104,7 @@ class Achievements: Fragment() {
             mdv.fitWidth = 1366.0
             root.vbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
             root.add(mdv)
+            mdp.setOnEndOfMedia { close(); audio.mdp.play() }
             mdp.play()
         }
 
@@ -128,11 +123,15 @@ class Achievements: Fragment() {
         }
 
 
+        //открытие видео по баллам
         for (i in 0..47 step 2) {
             val x = (i % 3) * 422.0 + 100.0
             val y = (i / 3) * 237.0 + 57.0
             btnVideo(x, y, listAchi[i], listLogo[i], numP, (i + 1) * 1000)
         }
+
+
+        //открытие видео по времени
         for (i in 1..47 step 2) {
             val x = (i % 3) * 422.0 + 100.0
             val y = (i / 3) * 237.0 + 57.0

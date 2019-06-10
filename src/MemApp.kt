@@ -6,8 +6,10 @@ import java.io.File
 
 class Memories : View("Memories") {
 
-    override val root = Pane(GameFunctionality().root)
+    override val root = Pane(Screen().root)
 
+    val audio: Audio by inject()
+    val audioPlay = audio.mdp.play()
 
     private val timeFile = File("Time.txt").readText()
     private val numT = Integer.parseInt(timeFile)
@@ -15,6 +17,7 @@ class Memories : View("Memories") {
 
     val bgi = if (numTT < 44) root.style = "-fx-background-image: url(Icons/Fon$numTT.jpg)"
     else root.style = "-fx-background-image: url(Icons/Fon43.jpg)"
+
 
 }
 
