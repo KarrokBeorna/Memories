@@ -47,7 +47,7 @@ class Screen : Fragment()  {
     }
 
 
-    //"достижения" в главное меню
+    //"достижения" в главном меню
     private val progress = button("Достижения") {
         prefHeight = 60.0
         prefWidth = 250.0
@@ -163,19 +163,19 @@ class Screen : Fragment()  {
             val x = event.screenX
             val y = event.screenY                                      //действие с левой кнопкой
             if (x < runx && index % 8 != 0 &&
-                (controller.killingIcons(index, index - 1) || (controller.killingIcons(index - 1, index)))) {
+                (controller.killingIcons(index, index - 1) || controller.killingIcons(index - 1, index))) {
                 moving(index, index - 1)
             }                                                          //действие с верхней кнопкой
             else if (y < runy && index in 8..63 &&
-                (controller.killingIcons(index, index - 8) || (controller.killingIcons(index - 8, index)))) {
+                (controller.killingIcons(index, index - 8) || controller.killingIcons(index - 8, index))) {
                 moving(index, index - 8)
             }                                                          //действие с правой кнопкой
             else if (x > runx + 75.0 && index % 8 != 7 &&
-                (controller.killingIcons(index, index + 1) || (controller.killingIcons(index + 1, index)))) {
+                (controller.killingIcons(index, index + 1) || controller.killingIcons(index + 1, index))) {
                 moving(index + 1, index)
             }                                                          //действие с нижней кнопкой
             else if (y > runy + 75.0 && index in 0..55 &&
-                (controller.killingIcons(index, index + 8) || (controller.killingIcons(index + 8, index)))) {
+                (controller.killingIcons(index, index + 8) || controller.killingIcons(index + 8, index))) {
                 moving(index + 8, index)
             }
         }

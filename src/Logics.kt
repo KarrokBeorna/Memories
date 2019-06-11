@@ -94,7 +94,6 @@ class Logics : Controller() {
 
         val she = list[index1]
         val other = list[index2]
-
         list.removeAt(index1)                                                 //удаляю из листа 2 числа для иконок
         list.removeAt(index2)
         list.add(index2, she)                                                 //добавляю их обратно, меняя местами
@@ -146,117 +145,56 @@ class Logics : Controller() {
         val minus = index1 - index2
         killCount.clear()
         killCount.add(index2)
-        checkLeft(index1, minus)
-        checkRight(index1, minus)
+        checkLeft(index1, index2, minus)
+        checkRight(index1, index2, minus)
         if (killCount.size < 3) {
             killCount.clear()
             killCount.add(index2)
-            checkTop(index1, minus)
-            checkBottom(index1, minus)
+            checkTop(index1, index2, minus)
+            checkBottom(index1, index2, minus)
         }
     }
 
-    private fun checkRight(index1: Int, minus: Int) {
-        when (minus) {
-            -1 -> when {
-                index1 % 8 == 5 -> if (list[index1] == list[index1 + 2]) killCount.add(index1 + 2)
-                index1 % 8 in 0..4 -> if (list[index1] == list[index1 + 3] && list[index1] == list[index1 + 2]) {
-                    killCount.add(index1 + 3)
-                    killCount.add(index1 + 2)
-                } else if (list[index1] == list[index1 + 2]) killCount.add(index1 + 2)
-            }
-            8 -> when {
-                index1 % 8 == 6 -> if (list[index1] == list[index1 - 7]) killCount.add(index1 - 7)
-                index1 % 8 in 0..5 -> if (list[index1] == list[index1 - 7] && list[index1] == list[index1 - 6]) {
-                    killCount.add(index1 - 7)
-                    killCount.add(index1 - 6)
-                } else if (list[index1] == list[index1 - 7]) killCount.add(index1 - 7)
-            }
-            -8 -> when {
-                index1 % 8 == 6 -> if (list[index1] == list[index1 + 9]) killCount.add(index1 + 9)
-                index1 % 8 in 0..5 -> if (list[index1] == list[index1 + 9] && list[index1] == list[index1 + 10]) {
-                    killCount.add(index1 + 9)
-                    killCount.add(index1 + 10)
-                } else if (list[index1] == list[index1 + 9]) killCount.add(index1 + 9)
-            }
+    private fun checkRight(index1: Int, index2: Int, minus: Int) {
+        val central = list[index1]
+        if (minus != 1) when (index2 % 8) {
+            6 -> if (central == list[index2 + 1]) killCount.add(index2 + 1)
+            in 0..5 -> if (central == list[index2 + 1] && central == list[index2 + 2]) {
+                killCount.add(index2 + 1)
+                killCount.add(index2 + 2)
+            } else if (central == list[index2 + 1]) killCount.add(index2 + 1)
         }
     }
-    private fun checkLeft(index1: Int, minus: Int){
-        when (minus) {
-            1 -> when {
-                index1 % 8 == 2 -> if (list[index1] == list[index1 - 2]) killCount.add(index1 - 2)
-                index1 % 8 in 3..7 -> if (list[index1] == list[index1 - 2] && list[index1] == list[index1 - 3]) {
-                    killCount.add(index1 - 2)
-                    killCount.add(index1 - 3)
-                } else if (list[index1] == list[index1 - 2]) killCount.add(index1 - 2)
-            }
-            8 -> when {
-                index1 % 8 == 1 -> if (list[index1] == list[index1 - 9]) killCount.add(index1 - 9)
-                index1 % 8 in 2..7 -> if (list[index1] == list[index1 - 9] && list[index1] == list[index1 - 10]) {
-                    killCount.add(index1 - 9)
-                    killCount.add(index1 - 10)
-                } else if (list[index1] == list[index1 - 9]) killCount.add(index1 - 9)
-            }
-            -8 -> when {
-                index1 % 8 == 1 -> if (list[index1] == list[index1 + 7]) killCount.add(index1 + 7)
-                index1 % 8 in 2..7 -> if (list[index1] == list[index1 + 7] && list[index1] == list[index1 + 6]) {
-                    killCount.add(index1 + 7)
-                    killCount.add(index1 + 6)
-                } else if (list[index1] == list[index1 + 7]) killCount.add(index1 + 7)
-            }
+    private fun checkLeft(index1: Int, index2: Int, minus: Int) {
+        val central = list[index1]
+        if (minus != -1) when (index2 % 8) {
+            1 -> if (central == list[index2 - 1]) killCount.add(index2 - 1)
+            in 2..7 -> if (central == list[index2 - 1] && central == list[index2 - 2]) {
+                killCount.add(index2 - 1)
+                killCount.add(index2 - 2)
+            } else if (central == list[index2 - 1]) killCount.add(index2 - 1)
         }
     }
-    private fun checkTop(index1: Int, minus: Int){
-        when (minus) {
-            -1 -> when {
-                index1 / 8 == 1 -> if (list[index1] == list[index1 - 7]) killCount.add(index1 - 7)
-                index1 / 8 in 2..7 -> if (list[index1] == list[index1 - 7] && list[index1] == list[index1 - 15]) {
-                    killCount.add(index1 - 7)
-                    killCount.add(index1 - 15)
-                } else if (list[index1] == list[index1 - 7]) killCount.add(index1 - 7)
-            }
-            8 -> when {
-                index1 / 8 == 2 -> if (list[index1] == list[index1 - 16]) killCount.add(index1 - 16)
-                index1 / 8 in 3..7 -> if (list[index1] == list[index1 - 16] && list[index1] == list[index1 - 24]) {
-                    killCount.add(index1 - 16)
-                    killCount.add(index1 - 24)
-                } else if (list[index1] == list[index1 - 16]) killCount.add(index1 - 16)
-            }
-            1 -> when {
-                index1 / 8 == 1 -> if (list[index1] == list[index1 - 9]) killCount.add(index1 - 9)
-                index1 / 8 in 2..7 -> if (list[index1] == list[index1 - 9] && list[index1] == list[index1 - 17]) {
-                    killCount.add(index1 - 9)
-                    killCount.add(index1 - 17)
-                } else if (list[index1] == list[index1 - 9]) killCount.add(index1 - 9)
-            }
+    private fun checkTop(index1: Int, index2: Int, minus: Int) {
+        val central = list[index1]
+        if (minus != -8) when (index2 / 8) {
+            1 -> if (central == list[index2 - 8]) killCount.add(index2 - 8)
+            in 2..7 -> if (central == list[index2 - 8] && central == list[index2 - 16]) {
+                killCount.add(index2 - 8)
+                killCount.add(index2 - 16)
+            } else if (central == list[index2 - 8]) killCount.add(index2 - 8)
         }
     }
-    private fun checkBottom(index1: Int, minus: Int){
-        when (minus) {
-            -1 -> when {
-                index1 / 8 == 6 -> if (list[index1] == list[index1 + 9]) killCount.add(index1 + 9)
-                index1 / 8 in 0..5 -> if (list[index1] == list[index1 + 9] && list[index1] == list[index1 + 17]) {
-                    killCount.add(index1 + 9)
-                    killCount.add(index1 + 17)
-                } else if (list[index1] == list[index1 + 9]) killCount.add(index1 + 9)
-            }
-            1 -> when {
-                index1 / 8 == 6 -> if (list[index1] == list[index1 + 7]) killCount.add(index1 + 7)
-                index1 / 8 in 0..5 -> if (list[index1] == list[index1 + 7] && list[index1] == list[index1 + 15]) {
-                    killCount.add(index1 + 7)
-                    killCount.add(index1 + 15)
-                } else if (list[index1] == list[index1 + 7]) killCount.add(index1 + 7)
-            }
-            -8 -> when {
-                index1 / 8 == 5 -> if (list[index1] == list[index1 + 16]) killCount.add(index1 + 16)
-                index1 / 8 in 0..4 -> if (list[index1] == list[index1 + 16] && list[index1] == list[index1 + 24]) {
-                    killCount.add(index1 + 16)
-                    killCount.add(index1 + 24)
-                } else if (list[index1] == list[index1 + 16]) killCount.add(index1 + 16)
-            }
+    private fun checkBottom(index1: Int, index2: Int, minus: Int) {
+        val central = list[index1]
+        if (minus != 8) when (index2 / 8) {
+            6 -> if (central == list[index2 + 8]) killCount.add(index2 + 8)
+            in 0..5 -> if (central == list[index2 + 8] && central == list[index2 + 16]) {
+                killCount.add(index2 + 8)
+                killCount.add(index2 + 16)
+            } else if (central == list[index2 + 8]) killCount.add(index2 + 8)
         }
     }
-
 
     //иконка для появления после уничтожения клетки
     fun randomForRenewal(index: Int): Int {
@@ -297,4 +235,7 @@ class Logics : Controller() {
             listButtons.removeAt(ind)
         }
     }
+
+
 }
+
